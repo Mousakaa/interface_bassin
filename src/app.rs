@@ -225,8 +225,9 @@ impl TemplateApp {
                                     -(self.left.next().y() - 495.0) * ui.min_rect().height() / 990.0,
                                 );
 
-                                egui::Area::new("next_emitter")
-                                    .fixed_pos(next_pos)
+                                let area = egui::Area::new("next_emitter")
+                                    .movable(true)
+                                    .default_pos(next_pos)
                                     .constrain_to(ui.min_rect())
                                     .show(ui.ctx(), |ui| {
                                         ui.add(
@@ -234,12 +235,23 @@ impl TemplateApp {
                                                     egui::include_image!("../assets/emitter.png")
                                                 )
                                                 .max_size(egui::vec2(30.0, 30.0))
+                                                .tint(egui::Color32::from_rgba_premultiplied(0,0,0,100))
                                                 .rotate(
                                                     self.left.next().theta() * PI / 180.0 + PI / 2.0,
                                                     egui::vec2(0.5, 0.8)
                                                 )
                                         );
-                                    });
+                                    }).response;
+
+                                if area.dragged() {
+                                    let pix_pos = area.rect.min - ui.min_rect().min;
+                                    self.left.set_next(definitions::Position::new(
+                                        pix_pos.x * 1347.0 / ui.min_rect().width() - 1417.0,
+                                        -pix_pos.y * 990.0 / ui.min_rect().height() + 495.0,
+                                        self.left.next().z(),
+                                        self.left.next().theta()
+                                    ));
+                                }
                             });
 
                         ui.add_space(width * 140.0 / 1417.0);
@@ -285,6 +297,7 @@ impl TemplateApp {
                                 ui.set_width(width * (1.0 - 70.0 / 1417.0));
                                 ui.set_height(depth);
 
+                                // Current position
                                 let pos = ui.min_rect().min + egui::vec2(
                                     (self.left.position().x() + 1417.0) * ui.min_rect().width() / 1347.0,
                                     self.left.position().z() * ui.min_rect().height() / 680.0
@@ -301,6 +314,30 @@ impl TemplateApp {
                                                 .max_size(egui::vec2(30.0, 30.0))
                                                 .rotate(
                                                     if self.left.position().theta().abs() < 90.0
+                                                        { PI/2.0 } else { -PI/2.0 },
+                                                    egui::vec2(0.5, 0.8)
+                                                )
+                                        );
+                                    });
+
+                                // Next position
+                                let next_pos = ui.min_rect().min + egui::vec2(
+                                    (self.left.next().x() + 1417.0) * ui.min_rect().width() / 1347.0,
+                                    self.left.next().z() * ui.min_rect().height() / 680.0
+                                );
+
+                                egui::Area::new("next_emitter_depth")
+                                    .fixed_pos(next_pos)
+                                    .constrain_to(ui.min_rect())
+                                    .show(ui.ctx(), |ui| {
+                                        ui.add(
+                                                egui::Image::new(
+                                                    egui::include_image!("../assets/emitter.png")
+                                                )
+                                                .max_size(egui::vec2(30.0, 30.0))
+                                                .tint(egui::Color32::from_rgba_premultiplied(0,0,0,100))
+                                                .rotate(
+                                                    if self.left.next().theta().abs() < 90.0
                                                         { PI/2.0 } else { -PI/2.0 },
                                                     egui::vec2(0.5, 0.8)
                                                 )
