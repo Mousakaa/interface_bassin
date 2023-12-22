@@ -1,10 +1,12 @@
-use egui::CursorIcon::Default;
 use libbeaglebone as bb;
-use libbeaglebone::gpio::PinDirection;
-use libbeaglebone::prelude::PinState;
-use crate::app::definitions;
+use bb::{
+    gpio::{
+        GPIO,
+        PinDirection
+    },
+    prelude::PinState
+};
 use std::thread;
-use egui::Key::E;
 
 enum DriverType {
     X,
@@ -14,26 +16,26 @@ enum DriverType {
 }
 
 pub struct DriverCN {
-    pin_go: bb::gpio::GPIO,
-    pin_reset: bb::gpio::GPIO,
-    pin_ordre_arr_urg: bb::gpio::GPIO,
-    pin_ar_mom: bb::gpio::GPIO,
-    pin_zero: bb::gpio::GPIO,
-    pin_fin_mvt: bb::gpio::GPIO,
-    pin_info_arr_urg: bb::gpio::GPIO,
+    pin_go: GPIO,
+    pin_reset: GPIO,
+    pin_ordre_arr_urg: GPIO,
+    pin_ar_mom: GPIO,
+    pin_zero: GPIO,
+    pin_fin_mvt: GPIO,
+    pin_info_arr_urg: GPIO,
     driver_type: DriverType,
 }
 
 impl Default for DriverCN {
     fn default() -> Self {
         Self {
-            pin_go: Default::default(),
-            pin_reset: Default::default(),
-            pin_ordre_arr_urg: Default::default(),
-            pin_ar_mom: Default::default(),
-            pin_zero: Default::default(),
-            pin_fin_mvt: Default::default(),
-            pin_info_arr_urg: Default::default(),
+            pin_go: GPIO::new(0),
+            pin_reset: GPIO::new(0),
+            pin_ordre_arr_urg: GPIO::new(0),
+            pin_ar_mom: GPIO::new(0),
+            pin_zero: GPIO::new(0),
+            pin_fin_mvt: GPIO::new(0),
+            pin_info_arr_urg: GPIO::new(0),
             driver_type: DriverType::X,
         }
     }
@@ -41,7 +43,7 @@ impl Default for DriverCN {
 
 impl DriverCN {
     pub fn new(is_emitter: bool, driver_type: DriverType) -> bb::errors::Result<Self>{
-        let mut driver = Default::default();
+        let mut driver = Self::default();
         driver.driver_type = driver_type;
         let mut pin_go: u8;
         let mut pin_reset: u8;
@@ -134,13 +136,13 @@ impl DriverCN {
             }
         }
 
-        driver.pin_go = bb::gpio::GPIO::new(pin_go);
-        driver.pin_reset = bb::gpio::GPIO::new(pin_reset);
-        driver.pin_ordre_arr_urg = bb::gpio::GPIO::new(pin_ordre_arr_urg);
-        driver.pin_ar_mom = bb::gpio::GPIO::new(pin_ar_mom);
-        driver.pin_zero = bb::gpio::GPIO::new(pin_zero);
-        driver.pin_fin_mvt = bb::gpio::GPIO::new(pin_fin_mvt);
-        driver.pin_info_arr_urg = bb::gpio::GPIO::new(pin_info_arr_urg);
+        driver.pin_go = GPIO::new(pin_go);
+        driver.pin_reset = GPIO::new(pin_reset);
+        driver.pin_ordre_arr_urg = GPIO::new(pin_ordre_arr_urg);
+        driver.pin_ar_mom = GPIO::new(pin_ar_mom);
+        driver.pin_zero = GPIO::new(pin_zero);
+        driver.pin_fin_mvt = GPIO::new(pin_fin_mvt);
+        driver.pin_info_arr_urg = GPIO::new(pin_info_arr_urg);
 
         driver.set_direction();
 
@@ -174,11 +176,16 @@ impl DriverCN {
     }
 
     pub fn go(&mut self) -> bb::errors::Result<()>{
-        if self.pin_go.read() == PinState::High || self.pin_fin_mvt.read() == PinState::Low {
-            return Err(bb::errors::Error(bb::errors::ErrorKind::Msg("Mouvement non fini".to_string()),Default::default));
+        if self.pin_go.read()? == PinState::High
+            || self.pin_fin_mvt.read()? == PinState::Low {
+                return Err(bb::errors::Error(
+                        bb::errors::ErrorKind::Msg(
+                            "Mouvement non fini".to_string()),
+                        Default::default()
+                ));
         }
         self.pin_go.write(PinState::High)?;
-        while self.pin_fin_mvt.read() == PinState::High{}
+        while self.pin_fin_mvt.read()? == PinState::High{}
         self.pin_go.write(PinState::Low)?;
         return Ok(());
     }
@@ -290,7 +297,7 @@ impl Default for Arm {
 
 impl Arm {
     pub fn new(is_emitter: bool) -> Self {
-        let mut arm = Default::default();
+        let mut arm = Self::default();
         arm.is_emitter = is_emitter;
         arm.origin();
         return arm;
