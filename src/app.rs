@@ -1,20 +1,36 @@
+mod definitions;
+
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[derive(serde::Deserialize, serde::Serialize)]
 #[serde(default)] // if we add new fields, give them default values when deserializing old state
 pub struct TemplateApp {
-    // Example stuff:
-    label: String,
+    left: definitions::Arm,
+    right: definitions::Arm,
 
-    #[serde(skip)] // This how you opt-out of serialization of a field
-    value: f32,
+    //#[serde(skip)] // This how you opt-out of serialization of a field
 }
 
 impl Default for TemplateApp {
     fn default() -> Self {
+        let mut left_arm = definitions::Arm::default();
+        left_arm.set_position(definitions::Position::new(
+            -1417.0,
+            495.0,
+            0.0,
+            0.0
+        ));
+        left_arm.set_next(left_arm.position());
+        let mut right_arm = definitions::Arm::default();
+        right_arm.set_position(definitions::Position::new(
+            1417.0,
+            495.0,
+            0.0,
+            0.0
+        ));
+        right_arm.set_next(right_arm.position());
         Self {
-            // Example stuff:
-            label: "Hello World!".to_owned(),
-            value: 2.7,
+            left: left_arm,
+            right: right_arm
         }
     }
 }
@@ -33,6 +49,247 @@ impl TemplateApp {
 
         Default::default()
     }
+
+    /// Defines the look of the left-side panel
+    pub fn left_panel(&mut self, ui: &mut egui::Ui) {
+        ui.vertical_centered(|ui| {
+            ui.heading("Position bras émetteur");
+        });
+        ui.separator();
+        ui.with_layout(
+            egui::Layout::top_down(egui::Align::Max),
+            |ui| {
+                let mut next = self.left.next();
+
+                ui.horizontal(|ui| {
+                    let mut val = next.x();
+                    ui.add(egui::Slider::new(
+                            &mut val,
+                            -1417.0..=-70.0
+                        ).suffix(" mm")
+                    );
+                    ui.label("X :");
+                    next.set_x(val);
+                });
+
+                ui.horizontal(|ui| {
+                    let mut val = next.y();
+                    ui.add(egui::Slider::new(
+                            &mut val,
+                            -495.0..=495.0
+                        ).suffix(" mm")
+                    );
+                    ui.label("Y :");
+                    next.set_y(val);
+                });
+
+                ui.horizontal(|ui| {
+                    let mut val = next.z();
+                    ui.add(egui::Slider::new(
+                            &mut val,
+                            0.0..=680.0
+                        ).suffix(" mm")
+                    );
+                    ui.label("Z :");
+                    next.set_z(val);
+                });
+
+                ui.horizontal(|ui| {
+                    let mut val = next.theta();
+                    ui.add(egui::Slider::new(
+                            &mut val,
+                            -180.0..=180.0
+                        ).suffix("°")
+                    );
+                    ui.label("Théta :");
+                    next.set_theta(val);
+                });
+                self.left.set_next(next);
+            }
+        );
+    }
+
+    /// Defines the look of the right-side panel
+    pub fn right_panel(&mut self, ui: &mut egui::Ui) {
+        ui.vertical_centered(|ui| {
+            ui.heading("Position bras récepteur");
+        });
+        ui.separator();
+        ui.with_layout(
+            egui::Layout::top_down(egui::Align::Max),
+            |ui| {
+                let mut next = self.right.next();
+
+                ui.horizontal(|ui| {
+                    let mut val = next.x();
+                    ui.add(egui::Slider::new(
+                            &mut val,
+                            70.0..=1417.0
+                        ).suffix(" mm")
+                    );
+                    ui.label("X :");
+                    next.set_x(val);
+                });
+
+                ui.horizontal(|ui| {
+                    let mut val = next.y();
+                    ui.add(egui::Slider::new(
+                            &mut val,
+                            -495.0..=495.0
+                        ).suffix(" mm")
+                    );
+                    ui.label("Y :");
+                    next.set_y(val);
+                });
+
+                ui.horizontal(|ui| {
+                    let mut val = next.z();
+                    ui.add(egui::Slider::new(
+                            &mut val,
+                            0.0..=680.0
+                        ).suffix(" mm")
+                    );
+                    ui.label("Z :");
+                    next.set_z(val);
+                });
+
+                ui.horizontal(|ui| {
+                    let mut val = next.theta();
+                    ui.add(egui::Slider::new(
+                            &mut val,
+                            -180.0..=180.0
+                        ).suffix("°")
+                    );
+                    ui.label("Théta :");
+                    next.set_theta(val);
+                });
+                self.right.set_next(next);
+            }
+        );
+    }
+
+    /// Defines the look of the main visual part of the UI
+    pub fn main_view(&mut self, ui: &mut egui::Ui) {
+
+        let width = ui.available_width() * (1.0 - 140.0 / 1417.0) / 2.0;
+        let height = width * 990.0 / 1417.0;
+
+        ui.label(format!("width = {}", width));
+
+        ui.vertical_centered(|ui| {
+
+            // Top view
+            ui.heading("Vue de dessus");
+            egui::Frame::none()
+                .fill(egui::Color32::LIGHT_BLUE)
+                .rounding(egui::Rounding::same(5.0))
+                .show(ui, |ui| {
+                    ui.add_space(10.0);
+                    ui.horizontal(|ui| {
+                        ui.add_space(10.0);
+
+                        // Left half
+                        egui::Frame::none()
+                            .stroke(egui::Stroke::new(2.0, egui::Color32::BLACK))
+                            .rounding(egui::Rounding::same(5.0))
+                            .show(ui, |ui| {
+                                ui.set_width(width * (1.0 - 70.0 / 1417.0));
+                                ui.set_height(height);
+
+                                // Current position
+                                let pos = ui.clip_rect().min + egui::vec2(
+                                    (self.left.position().x() + 1417.0) * ui.clip_rect().max.x / 1347.0,
+                                    (self.left.position().y() + 495.0) * ui.clip_rect().max.y / 990.0,
+                                );
+
+                                egui::Area::new("current_emitter")
+                                    .fixed_pos(pos)
+                                    .constrain_to(ui.min_rect())
+                                    .show(ui.ctx(), |ui| {
+                                        ui.add(
+                                                egui::widgets::Image::from_uri("https://flyclipart.com/thumb2/sound-emitter-icon-vector-clip-art-455354.png")
+                                                .max_width(10.0)
+                                                .rotate(
+                                                    self.left.position().theta(),
+                                                    egui::Vec2::splat(0.5)
+                                                )
+                                        );
+                                    });
+                            });
+
+                        ui.add_space(width * 140.0 / 1417.0);
+
+                        // Right half
+                        egui::Frame::none()
+                            .stroke(egui::Stroke::new(2.0, egui::Color32::BLACK))
+                            .rounding(egui::Rounding::same(5.0))
+                            .show(ui, |ui| {
+                                ui.set_width(width * (1.0 - 70.0 / 1417.0));
+                                ui.set_height(height);
+                            });
+
+                        ui.add_space(10.0);
+                    });
+                    ui.add_space(10.0);
+                });
+
+            ui.add_space(10.0);
+
+            let depth = (ui.available_height() - 20.0)
+                .min(width * 680.0 / 1417.0);
+
+            // Side view
+            ui.heading("Vue de côté");
+            egui::Frame::none()
+                .fill(egui::Color32::LIGHT_BLUE)
+                .rounding(egui::Rounding::same(5.0))
+                .show(ui, |ui| {
+                    ui.add_space(10.0);
+                    ui.horizontal(|ui| {
+                        ui.add_space(10.0);
+
+                        let mut rounding = egui::Rounding::ZERO;
+                        rounding.sw = 10.0;
+                        rounding.se = 10.0;
+
+                        // Left half
+                        egui::Frame::none()
+                            .stroke(egui::Stroke::new(2.0, egui::Color32::BLACK))
+                            .rounding(rounding)
+                            .show(ui, |ui| {
+                                ui.set_width(width * (1.0 - 70.0 / 1417.0));
+                                ui.set_height(depth);
+
+                                let pos = ui.clip_rect().min + egui::vec2(
+                                    (self.left.position().x() + 1417.0) * width / 1347.0,
+                                    self.left.position().z() * depth / 680.0,
+                                );
+
+                                egui::Area::new("current_emitter_depth")
+                                    .fixed_pos(pos)
+                                    .constrain_to(ui.min_rect())
+                                    .show(ui.ctx(), |ui| {
+                                        ui.heading("x");
+                                    }).response;
+                            });
+
+                        ui.add_space(width * 140.0 / 1417.0);
+
+                        // Right half
+                        egui::Frame::none()
+                            .stroke(egui::Stroke::new(2.0, egui::Color32::BLACK))
+                            .rounding(rounding)
+                            .show(ui, |ui| {
+                                ui.set_width(width * (1.0 - 70.0 / 1417.0));
+                                ui.set_height(depth);
+                            });
+
+                        ui.add_space(10.0);
+                    });
+                    ui.add_space(10.0);
+                });
+            });
+    }
 }
 
 impl eframe::App for TemplateApp {
@@ -50,60 +307,49 @@ impl eframe::App for TemplateApp {
             // The top panel is often a good place for a menu bar:
 
             egui::menu::bar(ui, |ui| {
-                // NOTE: no File->Quit on web pages!
-                let is_web = cfg!(target_arch = "wasm32");
-                if !is_web {
-                    ui.menu_button("File", |ui| {
-                        if ui.button("Quit").clicked() {
-                            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
-                        }
-                    });
-                    ui.add_space(16.0);
-                }
-
                 egui::widgets::global_dark_light_mode_buttons(ui);
+                ui.vertical_centered(|ui| {
+                    ui.heading("Interface Bassin SEACom");
+                });
+                ui.with_layout(
+                    egui::Layout::right_to_left(egui::Align::Center),
+                    |ui| {
+                        egui::warn_if_debug_build(ui);
+                    }
+                );
             });
         });
+
+        egui::SidePanel::left("left")
+            .show(ctx, |ui| self.left_panel(ui));
+
+        egui::SidePanel::right("right")
+            .show(ctx, |ui| self.right_panel(ui));
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
-            ui.heading("eframe template");
-
             ui.horizontal(|ui| {
-                ui.label("Write something: ");
-                ui.text_edit_singleline(&mut self.label);
+                if ui.button("Origine").clicked() {
+                    self.left.set_position(definitions::Position::new(
+                        -1417.0,
+                        495.0,
+                        0.0,
+                        0.0
+                    ));
+                    self.right.set_position(definitions::Position::new(
+                        1417.0,
+                        495.0,
+                        0.0,
+                        0.0
+                    ));
+                }
+                if ui.button("Go").clicked() {
+                    self.left.move_next();
+                    self.right.move_next();
+                }
             });
-
-            ui.add(egui::Slider::new(&mut self.value, 0.0..=10.0).text("value"));
-            if ui.button("Increment").clicked() {
-                self.value += 1.0;
-            }
-
-            ui.separator();
-
-            ui.add(egui::github_link_file!(
-                "https://github.com/emilk/eframe_template/blob/master/",
-                "Source code."
-            ));
-
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                powered_by_egui_and_eframe(ui);
-                egui::warn_if_debug_build(ui);
-            });
+            ui.add_space(10.0);
+            self.main_view(ui);
         });
     }
-}
-
-fn powered_by_egui_and_eframe(ui: &mut egui::Ui) {
-    ui.horizontal(|ui| {
-        ui.spacing_mut().item_spacing.x = 0.0;
-        ui.label("Powered by ");
-        ui.hyperlink_to("egui", "https://github.com/emilk/egui");
-        ui.label(" and ");
-        ui.hyperlink_to(
-            "eframe",
-            "https://github.com/emilk/egui/tree/master/crates/eframe",
-        );
-        ui.label(".");
-    });
 }
