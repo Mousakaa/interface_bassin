@@ -1,3 +1,6 @@
+use egui_extras::install_image_loaders;
+use std::f32::consts::PI;
+
 mod definitions;
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
@@ -174,8 +177,6 @@ impl TemplateApp {
         let width = ui.available_width() * (1.0 - 140.0 / 1417.0) / 2.0;
         let height = width * 990.0 / 1417.0;
 
-        ui.label(format!("width = {}", width));
-
         ui.vertical_centered(|ui| {
 
             // Top view
@@ -202,16 +203,40 @@ impl TemplateApp {
                                     -(self.left.position().y() - 495.0) * ui.min_rect().height() / 990.0,
                                 );
 
-                                egui::Area::new("curreui.clip_rect().max.x nt_emitter")
+                                egui::Area::new("current_emitter")
                                     .fixed_pos(pos)
                                     .constrain_to(ui.min_rect())
                                     .show(ui.ctx(), |ui| {
                                         ui.add(
-                                                egui::widgets::Image::from_uri("https://flyclipart.com/thumb2/sound-emitter-icon-vector-clip-art-455354.png")
-                                                .max_width(10.0)
+                                                egui::Image::new(
+                                                    egui::include_image!("../assets/emitter.png")
+                                                )
+                                                .max_size(egui::vec2(30.0, 30.0))
                                                 .rotate(
-                                                    self.left.position().theta(),
-                                                    egui::Vec2::splat(0.5)
+                                                    self.left.position().theta() * PI / 180.0 + PI / 2.0,
+                                                    egui::vec2(0.5, 0.8)
+                                                )
+                                        );
+                                    });
+
+                                // Next position
+                                let next_pos = ui.min_rect().min + egui::vec2(
+                                    (self.left.next().x() + 1417.0) * ui.min_rect().width() / 1347.0,
+                                    -(self.left.next().y() - 495.0) * ui.min_rect().height() / 990.0,
+                                );
+
+                                egui::Area::new("next_emitter")
+                                    .fixed_pos(next_pos)
+                                    .constrain_to(ui.min_rect())
+                                    .show(ui.ctx(), |ui| {
+                                        ui.add(
+                                                egui::Image::new(
+                                                    egui::include_image!("../assets/emitter.png")
+                                                )
+                                                .max_size(egui::vec2(30.0, 30.0))
+                                                .rotate(
+                                                    self.left.next().theta() * PI / 180.0 + PI / 2.0,
+                                                    egui::vec2(0.5, 0.8)
                                                 )
                                         );
                                     });
@@ -270,14 +295,17 @@ impl TemplateApp {
                                     .constrain_to(ui.min_rect())
                                     .show(ui.ctx(), |ui| {
                                         ui.add(
-                                                egui::widgets::Image::from_uri("https://flyclipart.com/thumb2/sound-emitter-icon-vector-clip-art-455354.png")
-                                                .max_width(10.0)
+                                                egui::Image::new(
+                                                    egui::include_image!("../assets/emitter.png")
+                                                )
+                                                .max_size(egui::vec2(30.0, 30.0))
                                                 .rotate(
-                                                    self.left.position().theta(),
-                                                    egui::Vec2::splat(0.5)
+                                                    if self.left.position().theta().abs() < 90.0
+                                                        { PI/2.0 } else { -PI/2.0 },
+                                                    egui::vec2(0.5, 0.8)
                                                 )
                                         );
-                                    }).response;
+                                    });
                             });
 
                         ui.add_space(width * 140.0 / 1417.0);
@@ -307,6 +335,9 @@ impl eframe::App for TemplateApp {
 
     /// Called each time the UI needs repainting, which may be many times per second.
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+
+        install_image_loaders(ctx);
+
         // Put your widgets into a `SidePanel`, `TopPanel`, `CentralPanel`, `Window` or `Area`.
         // For inspiration and more examples, go to https://emilk.github.io/egui
 
