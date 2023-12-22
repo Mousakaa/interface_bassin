@@ -196,7 +196,6 @@ impl TemplateApp {
                             .show(ui, |ui| {
                                 ui.set_width(width * (1.0 - 70.0 / 1417.0));
                                 ui.set_height(height);
-
                                 // Current position
                                 let pos = ui.min_rect().min + egui::vec2(
                                     (self.left.position().x() + 1417.0) * ui.min_rect().width() / 1347.0,
