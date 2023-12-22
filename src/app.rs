@@ -197,12 +197,12 @@ impl TemplateApp {
                                 ui.set_height(height);
 
                                 // Current position
-                                let pos = ui.clip_rect().min + egui::vec2(
-                                    (self.left.position().x() + 1417.0) * ui.clip_rect().max.x / 1347.0,
-                                    (self.left.position().y() + 495.0) * ui.clip_rect().max.y / 990.0,
+                                let pos = ui.min_rect().min + egui::vec2(
+                                    (self.left.position().x() + 1417.0) * ui.min_rect().width() / 1347.0,
+                                    -(self.left.position().y() - 495.0) * ui.min_rect().height() / 990.0,
                                 );
 
-                                egui::Area::new("current_emitter")
+                                egui::Area::new("curreui.clip_rect().max.x nt_emitter")
                                     .fixed_pos(pos)
                                     .constrain_to(ui.min_rect())
                                     .show(ui.ctx(), |ui| {
@@ -260,16 +260,23 @@ impl TemplateApp {
                                 ui.set_width(width * (1.0 - 70.0 / 1417.0));
                                 ui.set_height(depth);
 
-                                let pos = ui.clip_rect().min + egui::vec2(
-                                    (self.left.position().x() + 1417.0) * width / 1347.0,
-                                    self.left.position().z() * depth / 680.0,
+                                let pos = ui.min_rect().min + egui::vec2(
+                                    (self.left.position().x() + 1417.0) * ui.min_rect().width() / 1347.0,
+                                    self.left.position().z() * ui.min_rect().height() / 680.0
                                 );
 
                                 egui::Area::new("current_emitter_depth")
                                     .fixed_pos(pos)
                                     .constrain_to(ui.min_rect())
                                     .show(ui.ctx(), |ui| {
-                                        ui.heading("x");
+                                        ui.add(
+                                                egui::widgets::Image::from_uri("https://flyclipart.com/thumb2/sound-emitter-icon-vector-clip-art-455354.png")
+                                                .max_width(10.0)
+                                                .rotate(
+                                                    self.left.position().theta(),
+                                                    egui::Vec2::splat(0.5)
+                                                )
+                                        );
                                     }).response;
                             });
 
