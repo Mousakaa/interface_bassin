@@ -8,7 +8,7 @@ use bb::{
 };
 use std::thread;
 
-enum DriverType {
+pub enum DriverType {
     X,
     Y,
     Z,
@@ -144,9 +144,9 @@ impl DriverCN {
         driver.pin_fin_mvt = GPIO::new(pin_fin_mvt);
         driver.pin_info_arr_urg = GPIO::new(pin_info_arr_urg);
 
-        driver.set_direction();
+        driver.set_direction()?;
 
-        driver.set_export();
+        driver.set_export()?;
 
         return Ok(driver);
     }

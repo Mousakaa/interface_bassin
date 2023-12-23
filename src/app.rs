@@ -15,21 +15,9 @@ pub struct TemplateApp {
 
 impl Default for TemplateApp {
     fn default() -> Self {
-        let mut left_arm = definitions::Arm::default();
-        left_arm.set_position(definitions::Position::new(
-            -1417.0,
-            495.0,
-            0.0,
-            0.0
-        ));
+        let mut left_arm = definitions::Arm::new(true);
         left_arm.set_next(left_arm.position());
-        let mut right_arm = definitions::Arm::default();
-        right_arm.set_position(definitions::Position::new(
-            1417.0,
-            495.0,
-            0.0,
-            0.0
-        ));
+        let mut right_arm = definitions::Arm::new(false);
         right_arm.set_next(right_arm.position());
         Self {
             left: left_arm,
@@ -53,22 +41,31 @@ impl TemplateApp {
         Default::default()
     }
 
-    /// Defines the look of the left-side panel
-    pub fn left_panel(&mut self, ui: &mut egui::Ui) {
+    /// Defines the look of the left and right side panels
+    pub fn side_panel(&mut self, ui: &mut egui::Ui, is_emitter: bool) {
         ui.vertical_centered(|ui| {
-            ui.heading("Position bras émetteur");
+            ui.heading(match is_emitter {
+                true => "Position bras émetteur",
+                false => "Position bras récepteur"
+            });
         });
         ui.separator();
         ui.with_layout(
             egui::Layout::top_down(egui::Align::Max),
             |ui| {
-                let mut next = self.left.next();
+                let mut next = match is_emitter {
+                    true => self.left.next(),
+                    false => self.right.next()
+                };
 
                 ui.horizontal(|ui| {
                     let mut val = next.x();
                     ui.add(egui::Slider::new(
                             &mut val,
-                            -1417.0..=-70.0
+                            match is_emitter {
+                               true => -1417.0..=-70.0,
+                               false => 70.0..=1417.0
+                            }
                         ).suffix(" mm")
                     );
                     ui.label("X :");
@@ -107,66 +104,11 @@ impl TemplateApp {
                     ui.label("Théta :");
                     next.set_theta(val);
                 });
-                self.left.set_next(next);
-            }
-        );
-    }
 
-    /// Defines the look of the right-side panel
-    pub fn right_panel(&mut self, ui: &mut egui::Ui) {
-        ui.vertical_centered(|ui| {
-            ui.heading("Position bras récepteur");
-        });
-        ui.separator();
-        ui.with_layout(
-            egui::Layout::top_down(egui::Align::Max),
-            |ui| {
-                let mut next = self.right.next();
-
-                ui.horizontal(|ui| {
-                    let mut val = next.x();
-                    ui.add(egui::Slider::new(
-                            &mut val,
-                            70.0..=1417.0
-                        ).suffix(" mm")
-                    );
-                    ui.label("X :");
-                    next.set_x(val);
-                });
-
-                ui.horizontal(|ui| {
-                    let mut val = next.y();
-                    ui.add(egui::Slider::new(
-                            &mut val,
-                            -495.0..=495.0
-                        ).suffix(" mm")
-                    );
-                    ui.label("Y :");
-                    next.set_y(val);
-                });
-
-                ui.horizontal(|ui| {
-                    let mut val = next.z();
-                    ui.add(egui::Slider::new(
-                            &mut val,
-                            0.0..=680.0
-                        ).suffix(" mm")
-                    );
-                    ui.label("Z :");
-                    next.set_z(val);
-                });
-
-                ui.horizontal(|ui| {
-                    let mut val = next.theta();
-                    ui.add(egui::Slider::new(
-                            &mut val,
-                            -180.0..=180.0
-                        ).suffix("°")
-                    );
-                    ui.label("Théta :");
-                    next.set_theta(val);
-                });
-                self.right.set_next(next);
+                match is_emitter {
+                    true => self.left.set_next(next),
+                    false => self.right.set_next(next)
+                }
             }
         );
     }
@@ -395,27 +337,21 @@ impl eframe::App for TemplateApp {
         });
 
         egui::SidePanel::left("left")
-            .show(ctx, |ui| self.left_panel(ui));
+            .show(ctx, |ui|
+                self.side_panel(ui, true)
+            );
 
         egui::SidePanel::right("right")
-            .show(ctx, |ui| self.right_panel(ui));
+            .show(ctx, |ui|
+                self.side_panel(ui, false)
+            );
 
         egui::CentralPanel::default().show(ctx, |ui| {
             // The central panel the region left after adding TopPanel's and SidePanel's
             ui.horizontal(|ui| {
                 if ui.button("Origine").clicked() {
-                    self.left.set_position(definitions::Position::new(
-                        -1417.0,
-                        495.0,
-                        0.0,
-                        0.0
-                    ));
-                    self.right.set_position(definitions::Position::new(
-                        1417.0,
-                        495.0,
-                        0.0,
-                        0.0
-                    ));
+                    self.left.origin();
+                    self.right.origin();
                 }
                 if ui.button("Go").clicked() {
                     self.left.move_next();
@@ -423,7 +359,10 @@ impl eframe::App for TemplateApp {
                 }
             });
             ui.add_space(10.0);
+
             self.main_view(ui);
+
+            ui.add_space(10.0);
         });
     }
 }
